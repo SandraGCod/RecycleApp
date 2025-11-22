@@ -1,0 +1,10 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* TEMPORAL: quitar mientras configuramos los tokens */
+@layer base {
+  body {
+    @apply bg-white text-black;
+  }
+}
