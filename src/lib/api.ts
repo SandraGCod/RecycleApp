@@ -1,5 +1,6 @@
 const API_URL = import.meta.env.VITE_API_URL as string;
 const TOKEN_KEY = 'token';
+const USER_KEY = 'usuario';
 
 export interface Usuario {
   id: number;
@@ -32,28 +33,49 @@ export interface PuntoReciclaje {
 }
 
 export const getToken = () => localStorage.getItem(TOKEN_KEY);
-export const cerrarSesion = () => localStorage.removeItem(TOKEN_KEY);
+
+export function getUsuario(): Usuario | null {
+  try {
+    const raw = localStorage.getItem(USER_KEY);
+    return raw ? (JSON.parse(raw) as Usuario) : null;
+  } catch {
+    return null;
+  }
+}
+
+export function cerrarSesion() {
+  localStorage.removeItem(TOKEN_KEY);
+  localStorage.removeItem(USER_KEY);
+}
 
 async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   const token = getToken();
-  const res = await fetch(`${API_URL}${path}`, {
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      ...options.headers,
-    },
-  });
+
+  let res: Response;
+  try {
+    res = await fetch(`${API_URL}${path}`, {
+      ...options,
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        ...options.headers,
+      },
+    });
+  } catch {
+    throw new Error('No se pudo conectar con el servidor. Revisa tu conexión.');
+  }
 
   if (!res.ok) {
-      const body = await res.json().catch(() => ({}));
-      if (res.status === 401 && !path.startsWith('/api/auth/')) {
-        cerrarSesion();
-        throw new Error('Debes iniciar sesión para continuar');
-      }
-      const mensaje = body.error ?? Object.values(body).join(', ');
-      throw new Error(mensaje || `Error ${res.status}`);
+    const body = await res.json().catch(() => ({}));
+    if (res.status === 401 && !path.startsWith('/api/auth/')) {
+      cerrarSesion();
+      window.dispatchEvent(new Event('sesion-expirada'));
+      throw new Error('Tu sesión terminó. Inicia sesión de nuevo.');
     }
+    const mensaje = body.error ?? Object.values(body).join(', ');
+    throw new Error(mensaje || `Error ${res.status}`);
+  }
+  return res.status === 204 ? (undefined as T) : res.json();
 }
 
 export async function login(correo: string, password: string): Promise<Usuario> {
@@ -62,6 +84,7 @@ export async function login(correo: string, password: string): Promise<Usuario> 
     body: JSON.stringify({ correo, password }),
   });
   localStorage.setItem(TOKEN_KEY, data.token);
+  localStorage.setItem(USER_KEY, JSON.stringify(data.usuario));
   return data.usuario;
 }
 

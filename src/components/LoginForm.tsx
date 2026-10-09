@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Mail, Lock, Info } from 'lucide-react';
 import { Tooltip } from './Tooltip';
+import { login } from '../lib/api';
 
 interface LoginFormProps {
   onLogin: (email: string) => void;
@@ -13,6 +14,8 @@ export function LoginForm({ onLogin, onRegisterClick, onForgotPasswordClick }: L
   const [password, setPassword] = useState('');
   const [emailError, setEmailError] = useState('');
   const [passwordError, setPasswordError] = useState('');
+  const [formError, setFormError] = useState('');
+  const [loading, setLoading] = useState(false);
 
   const validateEmail = (value: string) => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -41,13 +44,22 @@ export function LoginForm({ onLogin, onRegisterClick, onForgotPasswordClick }: L
     return true;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setFormError('');
+
     const isEmailValid = validateEmail(email);
     const isPasswordValid = validatePassword(password);
-    
-    if (isEmailValid && isPasswordValid) {
-      onLogin(email);
+    if (!isEmailValid || !isPasswordValid) return;
+
+    setLoading(true);
+    try {
+      const usuario = await login(email.trim(), password);
+      onLogin(usuario.correo);
+    } catch (err) {
+      setFormError(err instanceof Error ? err.message : 'No se pudo iniciar sesión');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -78,9 +90,7 @@ export function LoginForm({ onLogin, onRegisterClick, onForgotPasswordClick }: L
               placeholder="tu@email.com"
             />
           </div>
-          {emailError && (
-            <p className="text-red-500 text-sm mt-1">{emailError}</p>
-          )}
+          {emailError && <p className="text-red-500 text-sm mt-1">{emailError}</p>}
         </div>
 
         {/* Password Field */}
@@ -106,9 +116,7 @@ export function LoginForm({ onLogin, onRegisterClick, onForgotPasswordClick }: L
               placeholder="••••••••"
             />
           </div>
-          {passwordError && (
-            <p className="text-red-500 text-sm mt-1">{passwordError}</p>
-          )}
+          {passwordError && <p className="text-red-500 text-sm mt-1">{passwordError}</p>}
         </div>
 
         {/* Forgot Password Link */}
@@ -122,12 +130,19 @@ export function LoginForm({ onLogin, onRegisterClick, onForgotPasswordClick }: L
           </button>
         </div>
 
+        {formError && (
+          <div className="bg-red-50 text-red-700 text-sm px-4 py-3 rounded-lg border border-red-200">
+            {formError}
+          </div>
+        )}
+
         {/* Submit Button */}
         <button
           type="submit"
-          className="w-full bg-gradient-to-r from-green-500 to-green-600 text-white py-3 rounded-lg hover:from-green-600 hover:to-green-700 transition-all shadow-md hover:shadow-lg"
+          disabled={loading}
+          className="w-full bg-gradient-to-r from-green-500 to-green-600 text-white py-3 rounded-lg hover:from-green-600 hover:to-green-700 transition-all shadow-md hover:shadow-lg disabled:opacity-60"
         >
-          Ingresar
+          {loading ? 'Ingresando...' : 'Ingresar'}
         </button>
       </form>
 
@@ -136,6 +151,7 @@ export function LoginForm({ onLogin, onRegisterClick, onForgotPasswordClick }: L
         <p className="text-gray-600">
           ¿No tienes cuenta?{' '}
           <button
+            type="button"
             onClick={onRegisterClick}
             className="text-green-600 hover:text-green-700 transition-colors"
           >

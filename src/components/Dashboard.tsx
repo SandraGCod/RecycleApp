@@ -92,7 +92,7 @@ export function Dashboard({ user, onLogout }: DashboardProps) {
 
       <main className="flex-1 overflow-hidden">
         {currentView === 'map' && <MapView reports={reports} points={points} />}
-        {currentView === 'report' && <ReportForm onSubmit={handleNewReport} />}
+        {currentView === 'report' && <ReportForm onSubmit={handleNewReport}  onDone={() => setCurrentView('map')} />}
         {currentView === 'guides' && <EducationalGuides />}
       </main>
     </div>

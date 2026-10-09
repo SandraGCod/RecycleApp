@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Mail, Lock, User, Info } from 'lucide-react';
 import { Tooltip } from './Tooltip';
+import { login, registro } from '../lib/api';
 
 interface RegisterFormProps {
   onRegister: (email: string) => void;
@@ -12,6 +13,8 @@ export function RegisterForm({ onRegister, onLoginClick }: RegisterFormProps) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [formError, setFormError] = useState('');
+  const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({
     name: '',
     email: '',
@@ -58,7 +61,7 @@ export function RegisterForm({ onRegister, onLoginClick }: RegisterFormProps) {
     const hasUpperCase = /[A-Z]/.test(value);
     const hasLowerCase = /[a-z]/.test(value);
     const hasNumber = /[0-9]/.test(value);
-    
+
     if (!hasUpperCase || !hasLowerCase || !hasNumber) {
       setErrors(prev => ({ ...prev, password: 'Debe contener mayúsculas, minúsculas y números' }));
       return false;
@@ -80,15 +83,26 @@ export function RegisterForm({ onRegister, onLoginClick }: RegisterFormProps) {
     return true;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setFormError('');
+
     const isNameValid = validateName(name);
     const isEmailValid = validateEmail(email);
     const isPasswordValid = validatePassword(password);
     const isConfirmPasswordValid = validateConfirmPassword(confirmPassword);
-    
-    if (isNameValid && isEmailValid && isPasswordValid && isConfirmPasswordValid) {
-      onRegister(email);
+
+    if (!(isNameValid && isEmailValid && isPasswordValid && isConfirmPasswordValid)) return;
+
+    setLoading(true);
+    try {
+      await registro(name.trim(), email.trim(), password);
+      const usuario = await login(email.trim(), password);
+      onRegister(usuario.correo);
+    } catch (err) {
+      setFormError(err instanceof Error ? err.message : 'No se pudo crear la cuenta');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -114,9 +128,7 @@ export function RegisterForm({ onRegister, onLoginClick }: RegisterFormProps) {
               placeholder="Tu nombre completo"
             />
           </div>
-          {errors.name && (
-            <p className="text-red-500 text-sm mt-1">{errors.name}</p>
-          )}
+          {errors.name && <p className="text-red-500 text-sm mt-1">{errors.name}</p>}
         </div>
 
         {/* Email Field */}
@@ -142,9 +154,7 @@ export function RegisterForm({ onRegister, onLoginClick }: RegisterFormProps) {
               placeholder="tu@email.com"
             />
           </div>
-          {errors.email && (
-            <p className="text-red-500 text-sm mt-1">{errors.email}</p>
-          )}
+          {errors.email && <p className="text-red-500 text-sm mt-1">{errors.email}</p>}
         </div>
 
         {/* Password Field */}
@@ -170,9 +180,7 @@ export function RegisterForm({ onRegister, onLoginClick }: RegisterFormProps) {
               placeholder="••••••••"
             />
           </div>
-          {errors.password && (
-            <p className="text-red-500 text-sm mt-1">{errors.password}</p>
-          )}
+          {errors.password && <p className="text-red-500 text-sm mt-1">{errors.password}</p>}
         </div>
 
         {/* Confirm Password Field */}
@@ -198,12 +206,19 @@ export function RegisterForm({ onRegister, onLoginClick }: RegisterFormProps) {
           )}
         </div>
 
+        {formError && (
+          <div className="bg-red-50 text-red-700 text-sm px-4 py-3 rounded-lg border border-red-200">
+            {formError}
+          </div>
+        )}
+
         {/* Submit Button */}
         <button
           type="submit"
-          className="w-full bg-gradient-to-r from-green-500 to-green-600 text-white py-3 rounded-lg hover:from-green-600 hover:to-green-700 transition-all shadow-md hover:shadow-lg"
+          disabled={loading}
+          className="w-full bg-gradient-to-r from-green-500 to-green-600 text-white py-3 rounded-lg hover:from-green-600 hover:to-green-700 transition-all shadow-md hover:shadow-lg disabled:opacity-60"
         >
-          Crear Cuenta
+          {loading ? 'Creando cuenta...' : 'Crear Cuenta'}
         </button>
       </form>
 
@@ -212,6 +227,7 @@ export function RegisterForm({ onRegister, onLoginClick }: RegisterFormProps) {
         <p className="text-gray-600">
           ¿Ya tienes cuenta?{' '}
           <button
+            type="button"
             onClick={onLoginClick}
             className="text-green-600 hover:text-green-700 transition-colors"
           >
