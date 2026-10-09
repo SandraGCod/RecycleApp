@@ -46,11 +46,14 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   });
 
   if (!res.ok) {
-    const body = await res.json().catch(() => ({}));
-    const mensaje = body.error ?? Object.values(body).join(', ') ?? `Error ${res.status}`;
-    throw new Error(mensaje || `Error ${res.status}`);
-  }
-  return res.status === 204 ? (undefined as T) : res.json();
+      const body = await res.json().catch(() => ({}));
+      if (res.status === 401 && !path.startsWith('/api/auth/')) {
+        cerrarSesion();
+        throw new Error('Debes iniciar sesión para continuar');
+      }
+      const mensaje = body.error ?? Object.values(body).join(', ');
+      throw new Error(mensaje || `Error ${res.status}`);
+    }
 }
 
 export async function login(correo: string, password: string): Promise<Usuario> {
