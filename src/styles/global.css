@@ -1,10 +1,28 @@
+@import '@fontsource-variable/public-sans';
+@import '@fontsource-variable/bricolage-grotesque';
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* TEMPORAL: quitar mientras configuramos los tokens */
 @layer base {
-  body {
-    @apply bg-white text-black;
+  html {
+    -webkit-tap-highlight-color: transparent;
   }
+
+  body {
+    @apply bg-campo font-sans text-tinta antialiased;
+  }
+
+ 
+  h1,
+  h2,
+  h3,
+  h4 {
+    @apply font-display font-semibold tracking-tight;
+  }
+  h1 { @apply text-3xl; }
+  h2 { @apply text-2xl; }
+  h3 { @apply text-xl; }
+  h4 { @apply text-lg; }
 }

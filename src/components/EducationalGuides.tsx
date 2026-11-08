@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { BookOpen, Recycle, Droplet, Zap } from 'lucide-react';
+import { ArrowLeft, BookOpen, Recycle, Droplet, Zap } from 'lucide-react';
 import { RecyclingGame } from './RecyclingGame';
 //import { WaterSavingGame } from './WaterSavingGame';
 
@@ -116,13 +116,14 @@ export function EducationalGuides() {
     if (game) {
       const GameComponent = game.component;
       return (
-        <div className="h-full overflow-y-auto bg-gradient-to-br from-green-50 to-blue-50">
-          <div className="container mx-auto px-4 py-8">
+        <div className="h-full overflow-y-auto bg-campo">
+          <div className="mx-auto max-w-xl px-4 py-6">
             <button
               onClick={() => setSelectedGame(null)}
-              className="mb-6 px-4 py-2 bg-white text-green-600 rounded-lg hover:bg-green-50 transition-colors border-2 border-green-200"
+              className="mb-4 inline-flex items-center gap-1.5 rounded-lg px-2 py-2 text-sm font-medium text-tinta/70 hover:text-tinta focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-senal/70"
             >
-              ← Volver a Guías
+              <ArrowLeft className="h-4 w-4" aria-hidden="true" />
+              Volver a las guías
             </button>
             <GameComponent />
           </div>
