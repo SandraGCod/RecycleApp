@@ -9,6 +9,14 @@ import { comprimirImagen } from '../lib/api';
 
 type Coords = { lat: number; lng: number };
 const BOGOTA: [number, number] = [4.711, -74.0721];
+const LIMITES_BOGOTA: [[number, number], [number, number]] = [
+  [4.45, -74.25], // suroccidente
+  [4.85, -73.98], // nororiente
+];
+
+const enBogota = (c: Coords) =>
+  c.lat >= LIMITES_BOGOTA[0][0] && c.lat <= LIMITES_BOGOTA[1][0] &&
+  c.lng >= LIMITES_BOGOTA[0][1] && c.lng <= LIMITES_BOGOTA[1][1];
 
 function TocarMapa({ onPick }: { onPick: (c: Coords) => void }) {
   useMapEvents({
@@ -63,6 +71,12 @@ export function ReportForm({ onSubmit, onDone }: ReportFormProps) {
       }
       const pos = await Geolocation.getCurrentPosition({ enableHighAccuracy: true, timeout: 15000 });
       const coords = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+      if (!enBogota(coords)) {
+        setError(
+          'Tu ubicación actual está fuera de Bogotá. Por ahora Eco-Reportes solo funciona en Bogotá; puedes marcar el punto tocando el mapa.'
+        );
+        return;
+    }
       setLocation(coords);
       setFoco(coords);
     } catch (err) {
@@ -207,12 +221,28 @@ export function ReportForm({ onSubmit, onDone }: ReportFormProps) {
               <p className="text-gray-500 text-sm mt-2">O toca el mapa para marcar el punto exacto.</p>
 
               <div className="mt-3 h-64 rounded-lg border-2 border-gray-200 overflow-hidden relative isolate">
-                <MapContainer center={BOGOTA} zoom={12} className="absolute inset-0">
+                <MapContainer
+                  center={BOGOTA}
+                  zoom={12}
+                  minZoom={10}
+                  maxBounds={LIMITES_BOGOTA}
+                  maxBoundsViscosity={1.0}
+                  className="absolute inset-0"
+                >
                   <TileLayer
                     attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
                     url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                   />
-                  <TocarMapa onPick={setLocation} />
+                  <TocarMapa
+                    onPick={(c) => {
+                      if (enBogota(c)) {
+                        setError(null);
+                        setLocation(c);
+                      } else {
+                        setError('Ese punto está fuera de Bogotá. Selecciona una ubicación dentro de la ciudad.');
+                      }
+                    }}
+                  />
                   <Centrar foco={foco} />
                   {location && (
                     <CircleMarker

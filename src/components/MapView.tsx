@@ -22,6 +22,11 @@ const TEXTO_ESTADO: Record<Estado, string> = {
 const COLOR_PUNTO = '#2563eb';
 const BOGOTA: [number, number] = [4.711, -74.0721];
 
+const LIMITES_BOGOTA: [[number, number], [number, number]] = [
+  [4.45, -74.25],
+  [4.85, -73.98],
+];
+
 function AjustarVista({ coords }: { coords: [number, number][] }) {
   const map = useMap();
   useEffect(() => {
@@ -84,7 +89,14 @@ export function MapView({ reports = [], points = [] }: MapViewProps) {
     <div className="h-full flex flex-col md:flex-row">
       {/* Mapa */}
       <div className="flex-1 relative isolate min-h-[300px]">
-        <MapContainer center={BOGOTA} zoom={12} scrollWheelZoom className="absolute inset-0">
+        <MapContainer
+          center={BOGOTA}
+          zoom={12}
+          minZoom={10}
+          maxBounds={LIMITES_BOGOTA}
+          maxBoundsViscosity={1.0}
+          className="absolute inset-0"
+        >
           <TileLayer
             attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
@@ -160,7 +172,11 @@ export function MapView({ reports = [], points = [] }: MapViewProps) {
                 <button onClick={() => setSelectedReport(null)} className="text-gray-500 hover:text-gray-700">✕</button>
               </div>
               {selectedReport.photo && (
-                <img src={selectedReport.photo} alt="Reporte" className="w-full h-40 object-cover rounded-lg mb-3" />
+                <img
+                  src={selectedReport.photo}
+                  alt="Reporte"
+                  className="w-full max-h-64 object-contain bg-gray-100 rounded-lg mb-3"
+                />
               )}
               <div className="space-y-2">
                 <p className="text-gray-700 text-sm">{selectedReport.address}</p>
