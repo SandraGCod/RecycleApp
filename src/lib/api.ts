@@ -108,3 +108,25 @@ export const crearReporte = (datos: {
   longitud: number;
   direccion?: string;
 }) => request<Reporte>('/api/reportes', { method: 'POST', body: JSON.stringify(datos) });
+
+export const obtenerReporte = (id: number | string) =>
+  request<Reporte>(`/api/reportes/${id}`);
+
+// Reduce la imagen para que el base64 no pese varios MB
+export function comprimirImagen(file: File, maxLado = 1024, calidad = 0.7): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+    img.onload = () => {
+      const escala = Math.min(1, maxLado / Math.max(img.width, img.height));
+      const canvas = document.createElement('canvas');
+      canvas.width = Math.round(img.width * escala);
+      canvas.height = Math.round(img.height * escala);
+      canvas.getContext('2d')!.drawImage(img, 0, 0, canvas.width, canvas.height);
+      URL.revokeObjectURL(url);
+      resolve(canvas.toDataURL('image/jpeg', calidad));
+    };
+    img.onerror = () => reject(new Error('No se pudo leer la imagen'));
+    img.src = url;
+  });
+}

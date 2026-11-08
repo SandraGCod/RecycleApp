@@ -5,6 +5,7 @@ import { Geolocation } from '@capacitor/geolocation';
 import { MapPin, FileText, Image, LocateFixed, CheckCircle } from 'lucide-react';
 import 'leaflet/dist/leaflet.css';
 import { type Report } from './Dashboard';
+import { comprimirImagen } from '../lib/api';
 
 type Coords = { lat: number; lng: number };
 const BOGOTA: [number, number] = [4.711, -74.0721];
@@ -40,12 +41,13 @@ export function ReportForm({ onSubmit, onDone }: ReportFormProps) {
   const [error, setError] = useState<string | null>(null);
   const [submitted, setSubmitted] = useState(false);
 
-  const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => setPhoto(reader.result as string);
-      reader.readAsDataURL(file);
+    if (!file) return;
+    try {
+        setPhoto(await comprimirImagen(file));
+    } catch {
+      setError('No se pudo procesar la imagen');
     }
   };
 
@@ -186,9 +188,6 @@ export function ReportForm({ onSubmit, onDone }: ReportFormProps) {
                   </label>
                 )}
               </div>
-              <p className="text-gray-400 text-xs mt-2">
-                La foto todavía no se guarda en el servidor; se incluirá en una próxima versión.
-              </p>
             </div>
 
             {/* Ubicación */}

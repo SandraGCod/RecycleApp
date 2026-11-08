@@ -3,7 +3,7 @@ import { CircleMarker, MapContainer, TileLayer, useMap } from 'react-leaflet';
 import { Calendar } from 'lucide-react';
 import 'leaflet/dist/leaflet.css';
 import { type Report } from './Dashboard';
-import { type PuntoReciclaje } from '../lib/api';
+import { obtenerReporte, type PuntoReciclaje } from '../lib/api';
 
 type Estado = NonNullable<Report['status']>;
 
@@ -62,9 +62,17 @@ export function MapView({ reports = [], points = [] }: MapViewProps) {
     return null;
   }, [selectedReport, selectedPoint]);
 
-  const seleccionarReporte = (r: Report) => {
+  const seleccionarReporte = async (r: Report) => {
     setSelectedPoint(null);
-    setSelectedReport(r);
+    setSelectedReport(r); // se muestra de inmediato, sin foto
+    try {
+      const detalle = await obtenerReporte(r.id);
+      setSelectedReport((actual) =>
+        actual?.id === r.id ? { ...actual, photo: detalle.fotoUrl ?? undefined } : actual
+      );
+    } catch {
+    /* si falla, se queda sin foto */
+    }
   };
 
   const seleccionarPunto = (p: PuntoReciclaje) => {

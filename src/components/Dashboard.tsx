@@ -64,6 +64,7 @@ export function Dashboard({ user, onLogout }: DashboardProps) {
     try {
       await crearReporte({
         descripcion: report.description,
+        fotoUrl: report.photo,
         latitud: report.location.lat,
         longitud: report.location.lng,
         direccion: report.address,
