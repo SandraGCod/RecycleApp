@@ -94,6 +94,18 @@ export const registro = (nombre: string, correo: string, password: string) =>
     body: JSON.stringify({ nombre, correo, password }),
   });
 
+export const solicitarCodigo = (correo: string) =>
+  request<{ mensaje: string }>('/api/auth/olvide-clave', {
+    method: 'POST',
+    body: JSON.stringify({ correo }),
+  });
+
+export const restablecerClave = (correo: string, codigo: string, nuevaPassword: string) =>
+  request<{ mensaje: string }>('/api/auth/restablecer-clave', {
+    method: 'POST',
+    body: JSON.stringify({ correo, codigo, nuevaPassword }),
+  });
+
 export const listarPuntos = (tipoMaterial?: string) =>
   request<PuntoReciclaje[]>(
     `/api/puntos-reciclaje${tipoMaterial ? `?tipoMaterial=${encodeURIComponent(tipoMaterial)}` : ''}`
