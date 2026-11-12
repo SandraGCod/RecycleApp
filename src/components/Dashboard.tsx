@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { MapView } from './MapView';
 import { ReportForm } from './ReportForm';
 import { EducationalGuides } from './EducationalGuides';
-import { Navigation } from './Navigation';
+import { Navigation, BarraInferior } from './Navigation'
 import {
   crearReporte,
   listarPuntos,
@@ -77,7 +77,7 @@ export function Dashboard({ user, onLogout }: DashboardProps) {
   };
 
   return (
-    <div className="h-screen flex flex-col">
+    <div className="flex h-dvh flex-col">
       <Navigation
         user={user}
         currentView={currentView}
@@ -86,7 +86,7 @@ export function Dashboard({ user, onLogout }: DashboardProps) {
       />
 
       {error && (
-        <div className="bg-red-50 text-red-700 text-sm px-4 py-2 border-b border-red-200">
+        <div className="border-b border-alerta/20 bg-alerta/10 px-4 py-2 text-sm font-medium text-alerta">
           {error}
         </div>
       )}
@@ -96,6 +96,7 @@ export function Dashboard({ user, onLogout }: DashboardProps) {
         {currentView === 'report' && <ReportForm onSubmit={handleNewReport}  onDone={() => setCurrentView('map')} />}
         {currentView === 'guides' && <EducationalGuides />}
       </main>
+        <BarraInferior currentView={currentView} onViewChange={setCurrentView} />
     </div>
   );
 }

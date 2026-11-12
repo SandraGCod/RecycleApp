@@ -23,26 +23,73 @@ const RESIDUOS: Residuo[] = [
   { id: '8', nombre: 'Cáscaras de huevo', emoji: '🥚', caneca: 'verde', pista: 'Se descomponen y aportan calcio al compost.' },
 ];
 
-const CANECAS: Record<Caneca, { nombre: string; detalle: string; tapa: string; cuerpo: string }> = {
+const CANECAS: Record<
+  Caneca,
+  { nombre: string; detalle: string; cuerpo: string; tapa: string; borde: string; placa: string; texto: string }
+> = {
   verde: {
     nombre: 'Verde',
     detalle: 'Orgánicos',
-    tapa: 'bg-verde-oscuro',
-    cuerpo: 'bg-verde text-white',
+    cuerpo: '#1E7B4B',
+    tapa: '#145C38',
+    borde: '#145C38',
+    placa: 'rgba(255,255,255,0.16)',
+    texto: 'text-white',
   },
   blanca: {
     nombre: 'Blanca',
     detalle: 'Aprovechables',
-    tapa: 'bg-tinta/20',
-    cuerpo: 'bg-white text-tinta border-2 border-t-0 border-tinta/15',
+    cuerpo: '#FFFFFF',
+    tapa: '#D3DAD5',
+    borde: '#AEB9B1',
+    placa: 'rgba(23,40,31,0.07)',
+    texto: 'text-tinta',
   },
   negra: {
     nombre: 'Negra',
     detalle: 'No aprovechables',
-    tapa: 'bg-negra-oscuro',
-    cuerpo: 'bg-negra text-white',
+    cuerpo: '#2A2D31',
+    tapa: '#17191C',
+    borde: '#17191C',
+    placa: 'rgba(255,255,255,0.14)',
+    texto: 'text-white',
   },
 };
+
+/** Dibujo de una caneca: asa, tapa que sobresale y cuerpo que se angosta hacia abajo */
+function CanecaDibujo({
+  config,
+  abierta,
+}: {
+  config: (typeof CANECAS)[Caneca];
+  abierta: boolean;
+}) {
+  return (
+    <svg viewBox="0 0 100 124" className="absolute inset-0 h-full w-full" aria-hidden="true">
+      {/* Cuerpo */}
+      <path
+        d="M13 28 H87 L80 114 Q79.6 118 75.5 118 H24.5 Q20.4 118 20 114 Z"
+        fill={config.cuerpo}
+        stroke={config.borde}
+        strokeWidth="1.5"
+        strokeLinejoin="round"
+      />
+      {/* Placa donde va el nombre */}
+      <rect x="20" y="52" width="60" height="26" rx="6" fill={config.placa} />
+      {/* Tapa con asa: se levanta cuando aciertas */}
+      <g
+        className="motion-safe:transition-transform motion-safe:duration-300"
+        style={{
+          transformOrigin: '92px 26px',
+          transform: abierta ? 'rotate(-14deg)' : 'rotate(0deg)',
+        }}
+      >
+        <rect x="38" y="3" width="24" height="10" rx="5" fill={config.tapa} stroke={config.borde} strokeWidth="1.5" />
+        <rect x="5" y="11" width="90" height="17" rx="7" fill={config.tapa} stroke={config.borde} strokeWidth="1.5" />
+      </g>
+    </svg>
+  );
+}
 
 const ORDEN_CANECAS: Caneca[] = ['verde', 'blanca', 'negra'];
 const INTENTOS = 3;
@@ -208,8 +255,46 @@ export function RecyclingGame() {
         <h4 className="mt-4 text-2xl">{residuo.nombre}</h4>
       </div>
 
+      {/* Canecas */}
+      <div className="mt-6 grid grid-cols-3 gap-3">
+        {ORDEN_CANECAS.map((clave) => {
+          const caneca = CANECAS[clave];
+          const probada = descartadas.includes(clave);
+          const bloqueada = acertado || probada;
+          const esLaCorrecta = acertado && clave === residuo.caneca;
+
+          return (
+            <button
+              key={clave}
+              type="button"
+              onClick={() => elegir(clave)}
+              disabled={bloqueada}
+              aria-label={`Caneca ${caneca.nombre.toLowerCase()}: ${caneca.detalle}`}
+              className={`flex flex-col items-center rounded-2xl p-1 transition-transform active:translate-y-px focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-senal/70 disabled:cursor-not-allowed ${
+                bloqueada && !esLaCorrecta ? 'opacity-40' : ''
+              } ${clave === ultimaFallida && !acertado ? 'motion-safe:animate-sacudir' : ''} ${
+                esLaCorrecta ? 'ring-4 ring-senal' : ''
+              }`}
+            >
+              <span className="relative block aspect-[100/124] w-full max-w-[96px]">
+                <CanecaDibujo config={caneca} abierta={esLaCorrecta} />
+                <span
+                  className={`absolute inset-x-0 flex items-center justify-center font-display text-[13px] font-semibold ${caneca.texto}`}
+                  style={{ top: '42%', height: '21%' }}
+                >
+                  {caneca.nombre}
+                </span>
+              </span>
+              <span className="mt-2 text-center text-xs font-medium leading-snug text-tinta/80">
+                {caneca.detalle}
+              </span>
+            </button>
+          );
+        })}
+      </div>
+
       {/* Retroalimentación */}
-      <div className="mt-4 min-h-[5.5rem]" aria-live="polite">
+      <div className="mt-4 empty:mt-0" aria-live="polite">
         {acertado ? (
           <div className="flex items-start gap-3 rounded-xl bg-verde/10 p-4">
             <Check className="mt-0.5 h-5 w-5 shrink-0 text-verde" aria-hidden="true" />
@@ -232,42 +317,12 @@ export function RecyclingGame() {
         <button
           type="button"
           onClick={siguiente}
-          className="mb-4 min-h-12 w-full rounded-xl bg-tinta px-6 font-semibold text-white transition-colors hover:bg-tinta/90 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-senal/70"
+          className="mt-3 min-h-12 w-full rounded-xl bg-tinta px-6 font-semibold text-white transition-colors hover:bg-tinta/90 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-senal/70"
         >
           {esUltimo ? 'Ver resultado' : 'Siguiente residuo'}
         </button>
       )}
 
-      {/* Canecas */}
-      <div className="grid grid-cols-3 gap-3">
-        {ORDEN_CANECAS.map((clave) => {
-          const caneca = CANECAS[clave];
-          const probada = descartadas.includes(clave);
-          const bloqueada = acertado || probada;
-          const esLaCorrecta = acertado && clave === residuo.caneca;
-
-          return (
-            <button
-              key={clave}
-              type="button"
-              onClick={() => elegir(clave)}
-              disabled={bloqueada}
-              aria-label={`Caneca ${caneca.nombre.toLowerCase()}: ${caneca.detalle}`}
-              className={`flex flex-col overflow-hidden rounded-xl text-left transition-transform active:translate-y-px focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-senal/70 disabled:cursor-not-allowed ${
-                bloqueada && !esLaCorrecta ? 'opacity-40' : ''
-              } ${clave === ultimaFallida && !acertado ? 'motion-safe:animate-sacudir' : ''} ${
-                esLaCorrecta ? 'ring-4 ring-senal' : ''
-              }`}
-            >
-              <span className={`block h-2.5 w-full ${caneca.tapa}`} />
-              <span className={`block flex-1 px-3 py-4 ${caneca.cuerpo}`}>
-                <span className="block font-display text-lg font-semibold leading-tight">{caneca.nombre}</span>
-                <span className="mt-1 block text-xs leading-snug opacity-90">{caneca.detalle}</span>
-              </span>
-            </button>
-          );
-        })}
-      </div>
     </section>
   );
 }
